@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Typography, Accordion, AccordionSummary, AccordionDetails, Chip, Stack, Button, Box } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useNavigate } from 'react-router-dom';
-import { fetchInvestigations, Investigation } from '../api';
+import { fetchInvestigations, type Investigation } from '../api';
 
 const Investigations: React.FC = () => {
     const [investigations, setInvestigations] = useState<Investigation[]>([]);
