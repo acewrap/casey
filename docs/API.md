@@ -59,8 +59,6 @@ Submit a new event for ingestion. This is the primary entry point for SIEM alert
 #### `POST /api/events/{id}/promote/`
 Promote an existing Event to an Incident.
 
----
-
 ### Incidents
 
 #### `GET /api/incidents/`
@@ -71,3 +69,48 @@ Create a new incident manually.
 
 #### `POST /api/incidents/{id}/create_war_room/`
 Trigger the creation of a WebEx War Room for the incident.
+
+### Investigations
+
+#### `GET /api/investigations/`
+List active investigations.
+
+#### `GET /api/investigations/{id}/`
+Get details of a specific investigation.
+
+#### `PATCH /api/investigations/{id}/`
+Update investigation details (e.g. description/notes).
+
+#### `POST /api/investigations/{id}/promote/`
+Promote the investigation (and its event) to an Incident.
+
+### Reporting & Charts
+
+#### `GET /api/charts/`
+List saved chart definitions.
+
+#### `POST /api/charts/`
+Create a new chart definition.
+
+#### `POST /api/reporting/generate/`
+Generate chart data based on query configuration.
+
+#### `POST /api/reporting/export_excel/`
+Export report data as an Excel file.
+
+#### `POST /api/reporting/export_pdf/`
+Export report data as a PDF file.
+
+### Bulk Actions
+
+#### `POST /api/events/bulk_status_update/`
+Update the status of multiple events at once.
+
+**Request Body:**
+```json
+{
+  "ids": [1, 2, 3],
+  "status": "FALSE_POSITIVE",
+  "reason": "Scanning activity authorized by change request CR-123"
+}
+```

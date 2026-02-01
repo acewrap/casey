@@ -15,8 +15,8 @@ test('capture screenshots', async ({ page }) => {
           severity: 'HIGH',
           mitre_tactics: ['Execution', 'Defense Evasion'],
           indicators: [
-            { value: '192.168.1.105', indicator_type: 'IPv4' },
-            { value: 'a1b2c3d4...', indicator_type: 'MD5' }
+            { id: 1, value: '192.168.1.105', indicator_type: 'IPv4' },
+            { id: 2, value: 'a1b2c3d4...', indicator_type: 'MD5' }
           ]
         },
         {
@@ -27,19 +27,19 @@ test('capture screenshots', async ({ page }) => {
           severity: 'MEDIUM',
           mitre_tactics: ['Credential Access'],
           indicators: [
-            { value: 'jdoe', indicator_type: 'User' },
-            { value: '10.0.0.55', indicator_type: 'IPv4' }
+            { id: 3, value: 'jdoe', indicator_type: 'User' },
+            { id: 4, value: '10.0.0.55', indicator_type: 'IPv4' }
           ]
         },
         {
           id: 3,
           source: 'PROOFPOINT',
           title: 'Phishing Email Detected',
-          status: 'NEW',
+          status: 'FALSE_POSITIVE',
           severity: 'HIGH',
           mitre_tactics: ['Initial Access'],
           indicators: [
-            { value: 'bad-site.com', indicator_type: 'Domain' }
+            { id: 5, value: 'bad-site.com', indicator_type: 'Domain' }
           ]
         }
     ];
@@ -54,21 +54,60 @@ test('capture screenshots', async ({ page }) => {
       await route.fulfill({ json });
   });
 
+  await page.route('**/api/investigations/', async route => {
+      const json = [
+          {
+              id: 1,
+              event: {
+                  id: 1,
+                  title: 'Malware Detected: trojan.win32.emotet',
+                  severity: 'HIGH',
+                  description: 'CrowdStrike detected malicious activity on endpoint WKSTN-01.'
+              },
+              created_at: new Date().toISOString()
+          }
+      ];
+      await route.fulfill({ json });
+  });
+
+  await page.route('**/api/investigations/1/', async route => {
+      const json = {
+          id: 1,
+          event: {
+              id: 1,
+              source: 'CROWDSTRIKE',
+              title: 'Malware Detected: trojan.win32.emotet',
+              severity: 'HIGH',
+              description: 'CrowdStrike detected malicious activity on endpoint WKSTN-01.',
+              created_at: new Date().toISOString()
+          },
+          description: '# Analysis\n\n- Verified hash in VirusTotal (Malicious)\n- Isolated host\n- Pending re-image',
+          tags: ['malware', 'urgent'],
+          timeline: [
+              { timestamp: new Date().toISOString(), entry: 'Investigator assigned', user: 'jdoe' }
+          ],
+          indicators: [
+              { id: 1, value: '192.168.1.105', indicator_type: 'IPv4' },
+              { id: 2, value: 'a1b2c3d4...', indicator_type: 'MD5' }
+          ],
+          related_events: [],
+          created_at: new Date().toISOString()
+      };
+      await route.fulfill({ json });
+  });
+
+  await page.route('**/api/charts/', async route => {
+      const json = [
+          { id: 1, title: 'Alerts by Source', chart_type: 'BAR' },
+          { id: 2, title: 'Alerts by Severity', chart_type: 'PIE' }
+      ];
+      await route.fulfill({ json });
+  });
+
   // Dashboard
   await page.goto('http://localhost:5173/');
-  await page.waitForTimeout(2000); // Wait for animations
+  await page.waitForTimeout(2000);
   await page.screenshot({ path: '../docs/screenshots/dashboard.png' });
-
-  // Capture individual charts
-  const volumeCard = page.locator('div.MuiPaper-root', { hasText: 'Alert Volume by Source' });
-  if (await volumeCard.isVisible()) {
-      await volumeCard.screenshot({ path: '../docs/screenshots/chart-volume.png' });
-  }
-
-  const mttdCard = page.locator('div.MuiPaper-root', { hasText: 'Mean Time To Detect (MTTD)' });
-  if (await mttdCard.isVisible()) {
-      await mttdCard.screenshot({ path: '../docs/screenshots/chart-mttd.png' });
-  }
 
   // Events
   await page.goto('http://localhost:5173/events');
@@ -80,10 +119,18 @@ test('capture screenshots', async ({ page }) => {
   await page.waitForTimeout(1000);
   await page.screenshot({ path: '../docs/screenshots/incidents.png' });
 
-  // Admin (Placeholder)
-  // Since the frontend just renders a placeholder <div> for /admin, this is safe to screenshot
-  // without needing a full Django Admin mock.
-  await page.goto('http://localhost:5173/admin');
+  // Active Investigations
+  await page.goto('http://localhost:5173/investigations');
   await page.waitForTimeout(1000);
-  await page.screenshot({ path: '../docs/screenshots/admin.png' });
+  await page.screenshot({ path: '../docs/screenshots/investigations.png' });
+
+  // Investigation Detail
+  await page.goto('http://localhost:5173/investigations/1');
+  await page.waitForTimeout(1000);
+  await page.screenshot({ path: '../docs/screenshots/investigation_detail.png' });
+
+  // Reporting
+  await page.goto('http://localhost:5173/reporting');
+  await page.waitForTimeout(2000); // Wait for charts to render
+  await page.screenshot({ path: '../docs/screenshots/reporting.png' });
 });

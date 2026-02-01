@@ -1,10 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid';
-import { Button, Typography, Paper, Chip, Stack } from '@mui/material';
-import api from '../api';
+import { DataGrid, GridColDef, GridRenderCellParams, GridRowSelectionModel } from '@mui/x-data-grid';
+import { Button, Typography, Paper, Chip, Stack, FormControlLabel, Switch, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from '@mui/material';
+import api, { Event, bulkStatusUpdate } from '../api';
+import StatusDropdown from '../components/StatusDropdown';
+import BulkActionBar from '../components/BulkActionBar';
 
 const Events: React.FC = () => {
-    const [events, setEvents] = useState([]);
+    const [events, setEvents] = useState<Event[]>([]);
+    const [showFalsePositives, setShowFalsePositives] = useState(false);
+    const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>([]);
+
+    // Dialog State
+    const [openDialog, setOpenDialog] = useState(false);
+    const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+    const [reason, setReason] = useState('');
+    const [targetIds, setTargetIds] = useState<number[]>([]);
 
     useEffect(() => {
         fetchEvents();
@@ -13,27 +23,59 @@ const Events: React.FC = () => {
     const fetchEvents = async () => {
         try {
             const res = await api.get('events/');
-            setEvents(res.data.results || res.data); // Handle pagination or list
+            setEvents(res.data.results || res.data);
         } catch (error) {
             console.error(error);
         }
     };
 
-    const handlePromote = async (id: number) => {
+    const handleStatusChange = (id: number, newStatus: string) => {
+        setTargetIds([id]);
+        setPendingStatus(newStatus);
+        setReason('');
+        setOpenDialog(true);
+    };
+
+    const handleBulkAction = (status: string) => {
+        setTargetIds(selectionModel as number[]);
+        setPendingStatus(status);
+        setReason('');
+        setOpenDialog(true);
+    };
+
+    const confirmStatusChange = async () => {
+        if (!pendingStatus) return;
+
         try {
-            await api.post(`events/${id}/promote/`);
-            alert('Event promoted to Incident!');
+            await bulkStatusUpdate(targetIds, pendingStatus, reason);
             fetchEvents();
+            setOpenDialog(false);
+            setSelectionModel([]);
         } catch (error) {
-            alert('Error promoting event');
+            console.error(error);
+            alert('Error updating status');
         }
     };
+
+    const filteredEvents = events.filter(e =>
+        showFalsePositives ? true : e.status !== 'FALSE_POSITIVE'
+    );
 
     const columns: GridColDef[] = [
         { field: 'id', headerName: 'ID', width: 70 },
         { field: 'source', headerName: 'Source', width: 130 },
         { field: 'title', headerName: 'Title', width: 300 },
-        { field: 'status', headerName: 'Status', width: 130 },
+        {
+            field: 'status',
+            headerName: 'Status',
+            width: 200,
+            renderCell: (params: GridRenderCellParams) => (
+                <StatusDropdown
+                    status={params.row.status}
+                    onChange={(newStatus) => handleStatusChange(params.row.id, newStatus)}
+                />
+            )
+        },
         { field: 'severity', headerName: 'Severity', width: 130 },
         {
             field: 'mitre_tactics',
@@ -54,41 +96,63 @@ const Events: React.FC = () => {
             renderCell: (params: GridRenderCellParams) => (
                 <Stack direction="row" spacing={1}>
                     {params.row.indicators?.map((i: any) => (
-                        <Chip key={i.value} label={`${i.value} (${i.indicator_type})`} size="small" color="primary" />
+                        <Chip key={i.id || i.value} label={`${i.value} (${i.indicator_type})`} size="small" color="primary" />
                     ))}
                 </Stack>
             )
-        },
-        {
-            field: 'action',
-            headerName: 'Action',
-            width: 150,
-            renderCell: (params: GridRenderCellParams) => (
-                <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => handlePromote(params.row.id)}
-                    disabled={params.row.status === 'PROMOTED'}
-                >
-                    Promote
-                </Button>
-            ),
-        },
+        }
     ];
 
     return (
-        <Paper sx={{ height: 600, width: '100%', p: 2 }}>
-            <Typography variant="h4" gutterBottom>Incoming Events</Typography>
+        <Paper sx={{ height: 700, width: '100%', p: 2, display: 'flex', flexDirection: 'column' }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h4">Incoming Events</Typography>
+                <FormControlLabel
+                    control={<Switch checked={showFalsePositives} onChange={(e) => setShowFalsePositives(e.target.checked)} />}
+                    label="Show False Positives"
+                />
+            </Stack>
+
+            <BulkActionBar
+                selectedCount={selectionModel.length}
+                onMarkTruePositive={() => handleBulkAction('TRUE_POSITIVE')}
+                onMarkFalsePositive={() => handleBulkAction('FALSE_POSITIVE')}
+            />
+
             <DataGrid
-                rows={events}
+                rows={filteredEvents}
                 columns={columns}
+                checkboxSelection
+                onRowSelectionModelChange={(newSelection) => setSelectionModel(newSelection)}
+                rowSelectionModel={selectionModel}
                 initialState={{
                     pagination: {
                         paginationModel: { page: 0, pageSize: 10 },
                     },
                 }}
-                pageSizeOptions={[5, 10]}
+                pageSizeOptions={[5, 10, 20]}
             />
+
+            <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+                <DialogTitle>Update Status to {pendingStatus}</DialogTitle>
+                <DialogContent>
+                    <Typography gutterBottom>Please provide a reason for this change:</Typography>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="Reason for Change"
+                        fullWidth
+                        multiline
+                        rows={3}
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+                    <Button onClick={confirmStatusChange} variant="contained">Confirm</Button>
+                </DialogActions>
+            </Dialog>
         </Paper>
     );
 };
