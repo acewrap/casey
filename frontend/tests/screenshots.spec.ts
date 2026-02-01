@@ -1,30 +1,55 @@
 import { test, expect } from '@playwright/test';
 
 test('capture screenshots', async ({ page }) => {
-  // Login
-  // Note: Since we are using Basic Auth / Session for the API but the frontend
-  // currently doesn't implement a login page (it relies on session cookies or assumptions for this demo),
-  // we will just visit the pages. *However*, for this screenshot script to work effectively in this
-  // detached environment without a full browser session flow, we assume the frontend can load.
-  // Given the complexity of setting up a full auth flow in this headless environment for screenshots,
-  // we will focus on rendering the UI components.
-
-  // Actually, wait, the Frontend makes API calls. If those fail (401), the UI might look empty.
-  // For the purpose of these screenshots, we will rely on the UI rendering the "empty" or "loading" state
-  // comfortably, or we'd need to mock the API responses in Playwright.
+  // Set viewport for high-quality screenshots
+  await page.setViewportSize({ width: 1920, height: 1080 });
 
   // Mock API responses for clean screenshots
   await page.route('**/api/events/', async route => {
     const json = [
-        { id: 1, source: 'CROWDSTRIKE', title: 'Malware Detected', status: 'NEW', severity: 'HIGH' },
-        { id: 2, source: 'SPLUNK', title: 'Excessive Failed Logins', status: 'TRIAGED', severity: 'MEDIUM' }
+        {
+          id: 1,
+          source: 'CROWDSTRIKE',
+          title: 'Malware Detected: trojan.win32.emotet',
+          status: 'NEW',
+          severity: 'HIGH',
+          mitre_tactics: ['Execution', 'Defense Evasion'],
+          indicators: [
+            { value: '192.168.1.105', indicator_type: 'IPv4' },
+            { value: 'a1b2c3d4...', indicator_type: 'MD5' }
+          ]
+        },
+        {
+          id: 2,
+          source: 'SPLUNK',
+          title: 'Excessive Failed Logins: User jdoe',
+          status: 'TRIAGED',
+          severity: 'MEDIUM',
+          mitre_tactics: ['Credential Access'],
+          indicators: [
+            { value: 'jdoe', indicator_type: 'User' },
+            { value: '10.0.0.55', indicator_type: 'IPv4' }
+          ]
+        },
+        {
+          id: 3,
+          source: 'PROOFPOINT',
+          title: 'Phishing Email Detected',
+          status: 'NEW',
+          severity: 'HIGH',
+          mitre_tactics: ['Initial Access'],
+          indicators: [
+            { value: 'bad-site.com', indicator_type: 'Domain' }
+          ]
+        }
     ];
     await route.fulfill({ json });
   });
 
   await page.route('**/api/incidents/', async route => {
       const json = [
-          { id: 1, title: 'Incident from CROWDSTRIKE: Malware Detected', status: 'OPEN', onspring_id: '998877' }
+          { id: 1, title: 'Incident from CROWDSTRIKE: Malware Detected', status: 'OPEN', onspring_id: '998877' },
+          { id: 2, title: 'Incident from SPLUNK: Brute Force Attempt', status: 'INVESTIGATING', onspring_id: '998878' }
       ];
       await route.fulfill({ json });
   });
@@ -32,15 +57,33 @@ test('capture screenshots', async ({ page }) => {
   // Dashboard
   await page.goto('http://localhost:5173/');
   await page.waitForTimeout(2000); // Wait for animations
-  await page.screenshot({ path: 'docs/screenshots/dashboard.png' });
+  await page.screenshot({ path: '../docs/screenshots/dashboard.png' });
+
+  // Capture individual charts
+  const volumeCard = page.locator('div.MuiPaper-root', { hasText: 'Alert Volume by Source' });
+  if (await volumeCard.isVisible()) {
+      await volumeCard.screenshot({ path: '../docs/screenshots/chart-volume.png' });
+  }
+
+  const mttdCard = page.locator('div.MuiPaper-root', { hasText: 'Mean Time To Detect (MTTD)' });
+  if (await mttdCard.isVisible()) {
+      await mttdCard.screenshot({ path: '../docs/screenshots/chart-mttd.png' });
+  }
 
   // Events
   await page.goto('http://localhost:5173/events');
   await page.waitForTimeout(1000);
-  await page.screenshot({ path: 'docs/screenshots/events.png' });
+  await page.screenshot({ path: '../docs/screenshots/events.png' });
 
   // Incidents
   await page.goto('http://localhost:5173/incidents');
   await page.waitForTimeout(1000);
-  await page.screenshot({ path: 'docs/screenshots/incidents.png' });
+  await page.screenshot({ path: '../docs/screenshots/incidents.png' });
+
+  // Admin (Placeholder)
+  // Since the frontend just renders a placeholder <div> for /admin, this is safe to screenshot
+  // without needing a full Django Admin mock.
+  await page.goto('http://localhost:5173/admin');
+  await page.waitForTimeout(1000);
+  await page.screenshot({ path: '../docs/screenshots/admin.png' });
 });
