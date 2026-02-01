@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Paper, Typography, Button, Grid, Box, TextField, Tabs, Tab, Table, TableBody, TableCell, TableHead, TableRow, IconButton, Chip, Stack } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { fetchInvestigation, updateInvestigation, promoteInvestigation, excludeIndicator, addTag, removeTag, addTimelineEvent, Investigation } from '../api';
+import { fetchInvestigation, updateInvestigation, promoteInvestigation, excludeIndicator, addTag, removeTag, addTimelineEvent, type Investigation } from '../api';
 
 interface TabPanelProps {
     children?: React.ReactNode;

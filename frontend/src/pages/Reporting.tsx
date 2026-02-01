@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Paper, Typography, Button, Grid, Dialog, DialogTitle, DialogContent, TextField, DialogActions, Select, MenuItem, FormControl, InputLabel, Stack } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import DownloadIcon from '@mui/icons-material/Download';
-import api, { ChartDefinition, fetchCharts, createChart, exportReportExcel, exportReportPdf } from '../api';
+import api, { type ChartDefinition, fetchCharts, createChart, exportReportExcel, exportReportPdf } from '../api';
 
 const Reporting: React.FC = () => {
     const [charts, setCharts] = useState<ChartDefinition[]>([]);

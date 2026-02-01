@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { DataGrid, GridColDef, GridRenderCellParams, GridRowSelectionModel } from '@mui/x-data-grid';
+import { DataGrid, type GridColDef, type GridRenderCellParams, type GridRowSelectionModel } from '@mui/x-data-grid';
 import { Button, Typography, Paper, Chip, Stack, FormControlLabel, Switch, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from '@mui/material';
-import api, { Event, bulkStatusUpdate } from '../api';
+import api, { type Event, bulkStatusUpdate } from '../api';
 import StatusDropdown from '../components/StatusDropdown';
 import BulkActionBar from '../components/BulkActionBar';
 

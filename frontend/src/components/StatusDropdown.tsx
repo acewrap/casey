@@ -1,5 +1,6 @@
 import React from 'react';
-import { Select, MenuItem, FormControl, SelectChangeEvent } from '@mui/material';
+import { Select, MenuItem, FormControl } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material';
 
 interface StatusDropdownProps {
     status: string;
