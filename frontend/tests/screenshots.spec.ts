@@ -60,13 +60,8 @@ test('capture screenshots', async ({ page }) => {
   await page.screenshot({ path: '../docs/screenshots/dashboard.png' });
 
   // Capture individual charts
-  // We locate the charts by their container or closest unique text/element
-  const volumeChart = page.locator('.recharts-wrapper').first();
-  if (await volumeChart.isVisible()) {
-      // Assuming the first chart is Volume.
-      // Ideally we'd target the specific Paper or container.
-      // Let's take a screenshot of the Paper containing the text "Alert Volume by Source"
-      const volumeCard = page.locator('div.MuiPaper-root', { hasText: 'Alert Volume by Source' });
+  const volumeCard = page.locator('div.MuiPaper-root', { hasText: 'Alert Volume by Source' });
+  if (await volumeCard.isVisible()) {
       await volumeCard.screenshot({ path: '../docs/screenshots/chart-volume.png' });
   }
 
@@ -84,4 +79,11 @@ test('capture screenshots', async ({ page }) => {
   await page.goto('http://localhost:5173/incidents');
   await page.waitForTimeout(1000);
   await page.screenshot({ path: '../docs/screenshots/incidents.png' });
+
+  // Admin (Placeholder)
+  // Since the frontend just renders a placeholder <div> for /admin, this is safe to screenshot
+  // without needing a full Django Admin mock.
+  await page.goto('http://localhost:5173/admin');
+  await page.waitForTimeout(1000);
+  await page.screenshot({ path: '../docs/screenshots/admin.png' });
 });
