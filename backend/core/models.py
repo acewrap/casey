@@ -11,3 +11,13 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+class AuditLog(models.Model):
+    event = models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='audit_logs')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='audit_logs')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    action = models.CharField(max_length=255)
+    details = models.JSONField(default=dict)
+
+    def __str__(self):
+        return f"{self.timestamp} - {self.user} - {self.action}"

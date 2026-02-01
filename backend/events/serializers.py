@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from .models import Event, Incident
+from .models import Event, Incident, Investigation, ChartDefinition
 from artifacts.models import Indicator
-from core.models import User
+from core.models import User, AuditLog
 
 class IndicatorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Indicator
-        fields = ['value', 'indicator_type']
+        fields = ['id', 'value', 'indicator_type'] # Added ID for reference
 
 class EventSerializer(serializers.ModelSerializer):
     indicators = IndicatorSerializer(many=True, read_only=True)
@@ -40,3 +40,26 @@ class IncidentSerializer(serializers.ModelSerializer):
             except User.DoesNotExist:
                 pass
         return super().create(validated_data)
+
+class InvestigationSerializer(serializers.ModelSerializer):
+    event = EventSerializer(read_only=True)
+    indicators = IndicatorSerializer(many=True, read_only=True)
+    related_events = EventSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Investigation
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at', 'event')
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+
+    class Meta:
+        model = AuditLog
+        fields = '__all__'
+
+class ChartDefinitionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChartDefinition
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at', 'user')
