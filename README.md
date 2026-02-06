@@ -1,45 +1,61 @@
-# CASEY: Cybersecurity Case Management System
+# Casey: Cybersecurity Case Management System
 
-## Overview
-Casey is a modular case management system designed to triage security **Events** into **Incidents** and automate log searching across a specific tech stack (CrowdStrike, Splunk, etc.) without using AI.
+Casey is a modern, async-first Case Management System (CMS) designed for Security Operations Centers (SOC). It aggregates alerts, performs automated enrichment, and manages the incident lifecycle.
 
-## Key Features
-*   **Ingestion:** Webhook-based ingestion for SIEM alerts (CrowdStrike, ProofPoint).
-*   **Triage Workflow:**
-    *   Bulk Status Management (True/False Positive).
-    *   False Positive Filtering and Reason Logging.
-    *   Active Investigation mode for "True Positive" events.
-*   **Automation:** Regex-based IOC extraction and automated threat intel lookups (VirusTotal, AbuseIPDB).
-*   **Orchestration:** Abstracted integration layer for Log Searching (Splunk, Sumo Logic) and Actions (CrowdStrike RTR).
-*   **Case Management:** Promote Investigations to Incidents with bi-directional OnSpring synchronization.
-*   **Reporting:** Custom Chart creation and PDF/Excel export.
-*   **Visualization:** React-based dashboard for metrics and event triage.
-*   **Audit & Compliance:** Detailed audit logs for status changes and investigations.
+![Dashboard](docs/screenshots/dashboard.png)
+
+## Features
+
+### 🚀 Async Enrichment Engine
+*   **High Performance**: Powered by `asyncio` and Celery, Casey enriches events concurrently without blocking.
+*   **Modular Plugins**: Easily extensible plugin architecture for integrations like CrowdStrike, Netskope, and more.
+*   **Real-time Context**: Automatically queries SIEMs, Threat Intel, and EDRs as soon as an alert arrives.
+
+### 🛡️ Production-Grade Security
+*   **Secret Management**: Hybird secret handling using Environment Variables (Dev) and AWS Secrets Manager (Prod).
+*   **Role-Based Access**: Granular permissions for analysts and admins.
+
+### 🧩 Integrations
+*   **CrowdStrike**: Process tree analysis and host containment.
+*   **Netskope**: CASB/SWG risk scoring.
+*   **Sumo Logic**: Log correlation.
+*   **ProofPoint**: Email security analysis.
+
+## Quick Start
+
+1.  **Clone the Repo**
+    ```bash
+    git clone https://github.com/your-org/casey.git
+    cd casey
+    ```
+
+2.  **Start Backend**
+    ```bash
+    cd backend
+    pip install -r requirements.txt
+    python manage.py migrate
+    python manage.py runserver
+    ```
+
+3.  **Start Frontend**
+    ```bash
+    cd frontend
+    npm install
+    npm run dev
+    ```
+
+4.  **Run Workers**
+    ```bash
+    celery -A config worker --loglevel=info
+    ```
 
 ## Architecture
 
-### Backend (Django + Celery)
-*   **Core:** User authentication and management.
-*   **Events:** Data model for Events and Incidents.
-*   **Artifacts:** Storage for Indicators (IPs, Hashes) and Evidence (search results).
-*   **Integrations:** Modular wrappers for external APIs.
-*   **Tasks:** Celery workers handle async scraping, enrichment, and sync.
-
-### Frontend (React + MUI)
-*   **Dashboard:** High-level metrics.
-*   **Events:** Triage interface with bulk actions.
-*   **Investigations:** Active investigation workspace.
-*   **Incidents:** Case management and War Room creation.
-*   **Reporting:** Analytics and data export.
-
-## Deployment
-See `docker-compose.yml` for the full stack definition.
-
-```bash
-docker-compose up --build
-```
+See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for a deep dive into the system design.
 
 ## Documentation
-*   [User Guide](docs/USER_GUIDE.md)
-*   [Admin Guide](docs/ADMIN_GUIDE.md)
+
+*   [Admin Guide](docs/ADMIN.md): How to configure secrets and add plugins.
 *   [API Documentation](docs/API.md)
+
+![Incident View](docs/screenshots/incident_detail.png)
