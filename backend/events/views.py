@@ -13,6 +13,7 @@ from core.models import AuditLog
 from .services import promote_event_to_incident
 from .sync import OnSpringSyncManager
 from .permissions import HasAPIKey
+from .tasks import process_new_event
 import json
 import logging
 import io
@@ -349,5 +350,8 @@ class WebhookIngestView(APIView):
             raw_data=data,
             status=Event.Status.NEW
         )
+
+        # Trigger background processing (Indicator extraction + Enrichment)
+        process_new_event.delay(event.id)
 
         return Response(EventSerializer(event).data, status=status.HTTP_201_CREATED)
