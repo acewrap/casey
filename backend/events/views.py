@@ -60,7 +60,7 @@ class GlobalSearchView(APIView):
         )[:5]
 
         # Search Investigations
-        investigations = Investigation.objects.filter(
+        investigations = Investigation.objects.select_related('event').filter(
             Q(event__title__icontains=query) |
             Q(id__icontains=query)
         )[:5]
