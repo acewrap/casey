@@ -140,7 +140,14 @@ class EventViewSet(viewsets.ModelViewSet):
         return Response({"updated": updated_count})
 
 class InvestigationViewSet(viewsets.ModelViewSet):
-    queryset = Investigation.objects.all().order_by('-created_at')
+    queryset = Investigation.objects.all().select_related(
+        'event'
+    ).prefetch_related(
+        'indicators',
+        'related_events',
+        'event__indicators',
+        'related_events__indicators'
+    ).order_by('-created_at')
     serializer_class = InvestigationSerializer
     permission_classes = [IsAuthenticated]
 
